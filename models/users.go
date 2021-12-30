@@ -8,6 +8,9 @@ import (
 var (
 	// ErrNotFound is returned when a resource cannot be found // in the database.
 	ErrNotFound = errors.New("models: resource not found")
+
+	// ErrInvalidID is returned when an invalid ID is provided to a method like Delete.
+	ErrInvalidID = errors.New("models: ID provided was invalid")
 )
 
 type User struct {
@@ -53,6 +56,14 @@ func (us *UserService) ByID(id uint) (*User, error) {
 	return &user, nil
 }
 
+// ByEmail will look up a user with the provided email
+func (us *UserService) ByEmail(email string) (*User, error) {
+	var user User
+	db := us.db.Where("email = ?", email)
+	err := first(db, &user)
+	return &user, err
+}
+
 // DestructiveReset drops the user table and rebuilds it
 func (us *UserService) DestructiveReset() {
 	us.db.DropTableIfExists(&User{})
@@ -74,9 +85,16 @@ func first(db *gorm.DB, dst interface{}) error {
 	return err
 }
 
-func (us *UserService) ByEmail(email string) (*User, error) {
-	var user User
-	db := us.db.Where("email = ?", email)
-	err := first(db, &user)
-	return &user, err
+// Update will update the provided user with all data in the provided user object.
+func (us *UserService) Update(user *User) error {
+	return us.db.Save(user).Error
+}
+
+// Delete will delete the user with the provided ID
+func (us *UserService) Delete(id uint) error {
+	if id == 0 {
+		return ErrInvalidID
+	}
+	user := User{Model: gorm.Model{ID: id}}
+	return us.db.Delete(&user).Error
 }
