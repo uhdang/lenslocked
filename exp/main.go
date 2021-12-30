@@ -1,9 +1,13 @@
 package main
 
 import (
-	"database/sql"
+	"bufio"
 	"fmt"
+	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
+	"github.com/uhdang/lenslocked/models"
+	"os"
+	"strings"
 )
 
 const (
@@ -13,53 +17,60 @@ const (
 	dbname = "lenslocked_dev"
 )
 
+type User struct {
+	gorm.Model
+	Name   string
+	Email  string `gorm:"not null; unique_index"`
+	Orders []Order
+}
+
+type Order struct {
+	gorm.Model
+	UserID      uint
+	Amount      int
+	Description string
+}
+
 func main() {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable", host, port, user, dbname)
-
-	db, err := sql.Open("postgres", psqlInfo)
+	us, err := models.NewUserService(psqlInfo)
 	if err != nil {
 		panic(err)
 	}
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	// [GENERATE ORDERS]
-	//	var id int
-	//	for i := 1; i < 6; i++ {
-	//		// Create some fake data
-	//		userId := 1
-	//		if i > 3 {
-	//			userId = 2
-	//		}
-	//		amount := 1000 * i
-	//		description := fmt.Sprintf("USB-C Adapter x%d", i)
-	//		err = db.QueryRow(`
-	//INSERT INTO orders (user_id, amount, description) VALUES ($1, $2, $3)
-	//RETURNING id`,
-	//			userId, amount, description).Scan(&id)
-	//		if err != nil {
-	//			panic(err)
-	//		}
-	//		fmt.Println("Created an order with the ID:", id)
-	//	}
-
-	// [DISPLAY USER]
-	//var id int
-	//var name, email string
-	//rows, err := db.Query(`
-	//SELECT id, name, email
-	//FROM users
-	//WHERE email = $1
-	//OR ID > $2`,
-	//	"jon@calhoun.io", 3)
-	//if err != nil {
+	//defer us.Close()
+	//us.DestructiveReset()
+	//user := models.User{
+	//	Name:  "Michael Scott",
+	//	Email: "miachel@dundermifflin.com",
+	//}
+	//if err := us.Create(&user); err != nil {
 	//	panic(err)
 	//}
-	//for rows.Next() {
-	//	rows.Scan(&id, &name, &email)
-	//	fmt.Println("ID:", id, "Name:", name, "Email:", email)
-	//}
-	db.Close()
+
+	foundUser, err := us.ByEmail("michael@dundermifflin.com")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(foundUser)
+}
+
+func getInfo() (name, email string) {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("What is your name?")
+	name, _ = reader.ReadString('\n')
+	fmt.Println("What is your email?")
+	email, _ = reader.ReadString('\n')
+	email = strings.TrimSpace(email)
+	return name, email
+}
+
+func createOrder(db *gorm.DB, user User, amount int, desc string) {
+	db.Create(&Order{
+		UserID:      user.ID,
+		Amount:      amount,
+		Description: desc,
+	})
+	if db.Error != nil {
+		panic(db.Error)
+	}
 }
