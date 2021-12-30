@@ -65,9 +65,12 @@ func (us *UserService) ByEmail(email string) (*User, error) {
 }
 
 // DestructiveReset drops the user table and rebuilds it
-func (us *UserService) DestructiveReset() {
-	us.db.DropTableIfExists(&User{})
-	us.db.AutoMigrate(&User{})
+func (us *UserService) DestructiveReset() error {
+	err := us.db.DropTableIfExists(&User{}).Error
+	if err != nil {
+		return err
+	}
+	return us.AutoMigrate()
 }
 
 // Create will create the provided user and backfill data like the ID, CreatedAt, and UpdatedAt fields.
@@ -97,4 +100,12 @@ func (us *UserService) Delete(id uint) error {
 	}
 	user := User{Model: gorm.Model{ID: id}}
 	return us.db.Delete(&user).Error
+}
+
+// AutoMigrate will attempt to automatically migrate the users table
+func (us *UserService) AutoMigrate() error {
+	if err := us.db.AutoMigrate(&User{}).Error; err != nil {
+		return err
+	}
+	return nil
 }
