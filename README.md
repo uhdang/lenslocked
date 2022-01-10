@@ -32,3 +32,12 @@ $ go mod tidy
 ### Adding package
 a. Installing `gorilla/mux`
 $ go get -u github.com/gorilla/mux
+
+## DB
+
+### Connect
+$ psql -U postgres
+
+### Frequently Used Commands
+$ \d    # list dbs
+

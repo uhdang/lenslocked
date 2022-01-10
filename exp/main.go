@@ -21,6 +21,7 @@ type User struct {
 	gorm.Model
 	Name   string
 	Email  string `gorm:"not null; unique_index"`
+	Age    int
 	Orders []Order
 }
 
@@ -42,6 +43,7 @@ func main() {
 	user := models.User{
 		Name:  "Michael Scott",
 		Email: "michael@dundermifflin.com",
+		Age:   23,
 	}
 	if err := us.Create(&user); err != nil {
 		panic(err)

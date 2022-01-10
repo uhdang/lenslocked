@@ -17,6 +17,7 @@ type User struct {
 	gorm.Model
 	Name  string
 	Email string `gorm:"not null;unique_index"`
+	Age   int
 }
 
 type UserService struct {
@@ -53,7 +54,7 @@ func (us *UserService) ByID(id uint) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return &user, err
 }
 
 // ByEmail will look up a user with the provided email
@@ -62,6 +63,18 @@ func (us *UserService) ByEmail(email string) (*User, error) {
 	db := us.db.Where("email = ?", email)
 	err := first(db, &user)
 	return &user, err
+}
+
+// ByAge will look up the first user with given age
+func (us *UserService) ByAge(age int) (*User, error) {
+	var user User
+	db := us.db.Where("age = ?", age)
+	err := first(db, &user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, err
+
 }
 
 // DestructiveReset drops the user table and rebuilds it
