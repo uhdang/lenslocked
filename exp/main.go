@@ -40,36 +40,29 @@ func main() {
 	}
 	defer us.Close()
 	us.DestructiveReset()
+
 	user := models.User{
-		Name:  "Michael Scott",
-		Email: "michael@dundermifflin.com",
-		Age:   23,
+		Name:     "Michael Scott",
+		Email:    "michael@dundermifflin.com",
+		Password: "bestboss",
+		Age:      23,
 	}
-	if err := us.Create(&user); err != nil {
-		panic(err)
-	}
-
-	user.Name = "Updated Name"
-	if err := us.Update(&user); err != nil {
-		panic(err)
-	}
-
-	foundUser, err := us.ByEmail("michael@dundermifflin.com")
+	err = us.Create(&user)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(foundUser)
 
-	// Delete a user
-	if err := us.Delete(foundUser.ID); err != nil {
+	fmt.Printf("%+v\n", user)
+	if user.Remember == "" {
+		panic("Invalid remember token")
+	}
+
+	user2, err := us.ByRemember(user.Remember)
+	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("%+v\n", user2)
 
-	// Verify the user is deleted
-	_, err = us.ByID(foundUser.ID)
-	if err != models.ErrNotFound {
-		panic("user was not deleted")
-	}
 }
 
 func getInfo() (name, email string) {
